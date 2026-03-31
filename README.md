@@ -55,4 +55,4 @@ Controle de acesso baseado em autenticação e autorização no backend.
 
 🌐 Acesse a aplicação
 
-👉 https://onda-finance-ruby.vercel.app/login
+👉 https://onda-finance-ruby.vercel.app
