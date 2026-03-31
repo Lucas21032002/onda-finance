@@ -1,73 +1,54 @@
-# React + TypeScript + Vite
+# Onda Finance 🌊
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicação bancária simulada construída com React + TypeScript, seguindo arquitetura baseada em features.
 
-Currently, two official plugins are available:
+## Como rodar o projeto
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+ponpm install
+pnpm run dev
+pnpm test
+pnpm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Decisões Técnicas
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Zustand vs React Query
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **Zustand** → **client state** (sessão, saldo). Leve, sem boilerplate, persistência via localStorage.
+- **React Query** → **server state** (transações). Cache, refetch, loading states, invalidação automática.
+
+### Organização por Features
+
+Cada feature (`auth`, `dashboard`, `transfer`) encapsula seus componentes. Escala melhor que organização por tipo.
+
+### Validação: Zod + React Hook Form
+
+Schemas declarativos e type-safe. Mínimos re-renders.
+
+### Axios
+
+Camada de API centralizada em `src/services/api/`.
+
+## Segurança (Considerações Teóricas)
+
+🔒 Engenharia Reversa
+O código frontend é minimizado e ofuscado no build (pnpm build), dificultando leitura direta.
+Informações sensíveis não são armazenadas no frontend.
+Toda lógica crítica (como regras financeiras e validações) deve estar no backend.
+Uso de variáveis de ambiente para evitar exposição de endpoints sensíveis.
+
+🔐 Vazamento de Dados
+HTTPS obrigatório para criptografia de dados em trânsito.
+Uso de cookies httpOnly para armazenamento de tokens (evita acesso via JavaScript).
+Implementação de proteção contra:
+XSS (Cross-Site Scripting) → sanitização de inputs
+CSRF (Cross-Site Request Forgery) → uso de tokens CSRF
+Dados sensíveis nunca são armazenados em localStorage ou sessionStorage.
+Controle de acesso baseado em autenticação e autorização no backend.
+
+## Melhorias Futuras
+
+- 🔐 Autenticação JWT real
+- 📄 Paginação de transações
+- 📊 Gráficos de gastos
