@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateTransfer } from "@/hooks/useTransactions";
@@ -16,17 +16,31 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowUpRight, Loader2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const transferSchema = z.object({
-  recipient: z.string().trim().min(2, "Nome do destinatário é obrigatório"),
-  amount: z
-    .string()
-    .min(1, "Valor é obrigatório")
-    .refine(
-      (v) => !isNaN(Number(v)) && Number(v) > 0,
-      "O valor deve ser maior que 0",
-    ),
-});
+const transferSchema = z
+  .object({
+    type: z.enum(["credit", "debit"]),
+    category: z.string().trim().min(2, "Categoria é obrigatória"),
+    recipient: z.string().trim().optional(),
+    amount: z
+      .string()
+      .min(1, "Valor é obrigatório")
+      .refine(
+        (v) => !isNaN(Number(v)) && Number(v) > 0,
+        "O valor deve ser maior que 0",
+      ),
+  })
+  .refine((data) => (data.type === "debit" ? !!data.recipient : true), {
+    message: "Nome do destinatário é obrigatório",
+    path: ["recipient"],
+  });
 
 type TransferForm = z.infer<typeof transferSchema>;
 
@@ -40,10 +54,24 @@ export default function TransferPage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    control,
     formState: { errors },
   } = useForm<TransferForm>({
     resolver: zodResolver(transferSchema),
+    defaultValues: { type: "debit", category: "" },
   });
+
+  const transferType = watch("type");
+
+  const categories = [
+    "TRABALHO",
+    "COMPRAS",
+    "LIFESTYLE",
+    "PIX",
+    "TRANSFER",
+    "OUTROS",
+  ];
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -54,7 +82,7 @@ export default function TransferPage() {
   const onSubmit = async (data: TransferForm) => {
     const amount = Number(data.amount);
 
-    if (amount > balance) {
+    if (data.type === "debit" && amount > balance) {
       toast({
         title: "Saldo insuficiente",
         description: `Seu saldo atual é ${formatCurrency(balance)}`,
@@ -64,13 +92,26 @@ export default function TransferPage() {
     }
 
     try {
-      await mutateAsync({ recipient: data.recipient, amount });
+      await mutateAsync({
+        recipient: data.type === "debit" ? data.recipient : undefined,
+        amount,
+        type: data.type,
+        category: data.category,
+      });
+
       setSuccess(true);
       toast({
-        title: "Transferência realizada! ✅",
-        description: `${formatCurrency(amount)} enviado para ${data.recipient}`,
+        title:
+          data.type === "debit"
+            ? "Transferência realizada! ✅"
+            : "Entrada registrada! ✅",
+        description:
+          data.type === "debit"
+            ? `${formatCurrency(amount)} enviado para ${data.recipient}`
+            : `${formatCurrency(amount)} em ${data.category}`,
       });
-      reset();
+
+      reset({ type: data.type, category: "" });
       setTimeout(() => setSuccess(false), 3000);
     } catch {
       toast({
@@ -119,19 +160,74 @@ export default function TransferPage() {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="recipient">Destinatário</Label>
-              <Input
-                id="recipient"
-                placeholder="Nome do destinatário"
-                {...register("recipient")}
-                className="bg-muted/50"
+              <Label>Tipo</Label>
+              <Controller
+                name="type"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="bg-muted/50">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="debit">
+                        Transferência (Saída)
+                      </SelectItem>
+                      <SelectItem value="credit">Entrada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               />
-              {errors.recipient && (
+              {errors.type && (
                 <p className="text-sm text-destructive">
-                  {errors.recipient.message}
+                  {errors.type.message}
                 </p>
               )}
             </div>
+
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Controller
+                name="category"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="bg-muted/50">
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.category && (
+                <p className="text-sm text-destructive">
+                  {errors.category.message}
+                </p>
+              )}
+            </div>
+
+            {transferType === "debit" && (
+              <div className="space-y-2">
+                <Label htmlFor="recipient">Destinatário</Label>
+                <Input
+                  id="recipient"
+                  placeholder="Nome do destinatário"
+                  {...register("recipient")}
+                  className="bg-muted/50"
+                />
+                {errors.recipient && (
+                  <p className="text-sm text-destructive">
+                    {errors.recipient.message}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="amount">Valor (R$)</Label>

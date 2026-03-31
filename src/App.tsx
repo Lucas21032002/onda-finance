@@ -7,7 +7,6 @@ import { AppLayout } from "@/components/AppLayout";
 import LoginPage from "@/features/auth/LoginPage";
 import DashboardPage from "@/features/dashboard/DashBoardPage";
 import TransferPage from "@/features/transfer/TransferPage";
-//import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -29,7 +28,6 @@ const App = () => (
             <Route path="/transfer" element={<TransferPage />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          {/* <Route path="*" element={<NotFound />} /> */}
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

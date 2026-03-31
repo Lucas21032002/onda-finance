@@ -16,11 +16,14 @@ export function useTransactions() {
 export function useCreateTransfer() {
   const queryClient = useQueryClient();
   const deduct = useBalanceStore((s) => s.deduct);
+  const add = useBalanceStore((s) => s.add);
 
   return useMutation({
     mutationFn: createTransfer,
-    onSuccess: (newTx, variables) => {
-      deduct(variables.amount);
+    onSuccess: (_newTx, variables) => {
+      if (variables.type === "debit") deduct(variables.amount);
+      else add(variables.amount);
+
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
     },
   });

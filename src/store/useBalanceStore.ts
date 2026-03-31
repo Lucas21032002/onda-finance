@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware";
 interface BalanceState {
   balance: number;
   deduct: (amount: number) => void;
+  add: (amount: number) => void;
   reset: () => void;
 }
 
@@ -14,6 +15,7 @@ export const useBalanceStore = create<BalanceState>()(
     (set) => ({
       balance: INITIAL_BALANCE,
       deduct: (amount) => set((state) => ({ balance: state.balance - amount })),
+      add: (amount) => set((state) => ({ balance: state.balance + amount })),
       reset: () => set({ balance: INITIAL_BALANCE }),
     }),
     { name: "onda-balance" },
